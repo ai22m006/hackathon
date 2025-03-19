@@ -1,0 +1,7 @@
+[theme]
+base = "light"                    # Set default theme to light mode
+primaryColor = "#1f77b4"          # Customize primary color
+backgroundColor = "#ffffff"       # Set background color to white
+secondaryBackgroundColor = "#f0f2f6"  # Set secondary background color
+textColor = "#262730"             # Customize text color
+font = "sans serif"               # Choose the font style (options include "sans serif", "serif", "monospace")
