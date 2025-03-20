@@ -6,10 +6,12 @@ import os
 from dotenv import load_dotenv
 import snowflake.connector
 import pandas as pd
+import requests
+from datetime import datetime
+from datetime import date
 import streamlit.components.v1 as components
+from streamlit_calendar import calendar
 import warnings
-
-# Ignore all warnings
 warnings.filterwarnings("ignore")
 
 # Load environment variables
@@ -117,7 +119,7 @@ hide_streamlit_style = """
     .block-container {
         padding-top: 1rem !important;  /* Adjust this value as needed */
     }
-    .stMetric, .stPlotlyChart, .stIFrame  {
+    .stMetric, .stPlotlyChart, .stIFrame {
         background-color: #FFFFFF !important;
         border-radius: 12px !important;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1) !important;
@@ -128,6 +130,11 @@ hide_streamlit_style = """
         transform: scale(1.02);
         box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2) !important;
     }
+
+    .stMetricLabel {
+        font-size: 2rem !important;
+    }
+
     [data-testid="stSidebar"] button {
         background-color: transparent !important;  /* Transparent background */
         border: 2px solid #ccc !important;         /* Outline */
@@ -292,9 +299,22 @@ elif selected_page == site3:
     st.write("Hier finden Sie Ihre heutige Übersicht.")
 
     # ----- Wetter Card -----
-    st.subheader("Wetter Heute")
-    # Dummy data: replace with actual weather API results if desired
-    st.write("Sonnig, 25°C")
+    if "weather" not in st.session_state:
+        try:
+            response = requests.get('https://login.meteomatics.com/api/v1/token', auth=(os.environ.get("WEATHER_USERNAME"), os.environ.get('WEATHER_PASSWORD')), verify=False)
+            response.raise_for_status()
+            data = response.json()
+            token = data['access_token']
+            time = datetime.now()
+            time = time.strftime("%Y-%m-%dT%H:%M:%S.000+01:00")
+            response = requests.get("https://api.meteomatics.com/" + time + "/t_2m:C/48.2083537,16.3725042/json?model=mix&access_token=" + token, verify=False)
+            response.raise_for_status()
+            data = response.json()
+            temperatur = data['data'][0]['coordinates'][0]['dates'][0]['value']
+        except requests.exceptions.HTTPError as err:
+            temperatur = 7
+        st.session_state.weather = "Sonnig, " + str(temperatur) + "°C"
+    st.metric("Wetter Heute", st.session_state.weather)
 
     # ----- Row 2: Meal Plan & Calendar -----
     col1, col2 = st.columns(2)
@@ -302,28 +322,58 @@ elif selected_page == site3:
     # Meal Plan Card
     with col1:
         st.subheader("Speiseplan (Woche)")
-        # Dummy meal plan data
-        meal_plan = {
-            "Montag": "Nudeln mit Tomatensauce",
-            "Dienstag": "Hähnchen mit Reis",
-            "Mittwoch": "Gemüsesuppe",
-            "Donnerstag": "Fisch mit Kartoffeln",
-            "Freitag": "Pizza",
-            "Samstag": "Salat mit Brot",
-            "Sonntag": "Braten mit Knödel"
-        }
-        for day, meal in meal_plan.items():
-            st.write(f"**{day}**: {meal}")
+        st.metric("Montag", "Nudeln mit Tomatensauce")
+        st.metric("Dienstag", "Hähnchen mit Reis")
+        st.metric("Mittwoch", "Gemüsesuppe")
+        st.metric("Donnerstag (Heute)", "Fisch mit Kartoffeln")
+        st.metric("Freitag", "Pizza")
+        st.metric("Samstag", "Salat mit Brot")
+        st.metric("Sonntag", "Braten mit Knödel")
 
     # Calendar/Appointments Card
     with col2:
         st.subheader("Kalender – Zukünftige Termine")
-        # Dummy appointments data
-        appointments = [
-            ("23.03.2025", "Arzttermin"),
-            ("25.03.2025", "Besuch vom Enkelkind"),
-            ("30.03.2025", "Gemeinsames Kaffeetrinken")
+        custom_css = """
+        .fc-event-title {
+            white-space: normal !important;
+            text-overflow: ellipsis;
+            height: 100%;
+            overflow: hidden;
+            ont-weight: 700;
+        }
+        .fc-daygrid-day-events {
+            width: 120% !important;
+            height: 100%;
+            overflow-x: auto;
+            overflow-y: auto;
+        }
+        """
+        calendar_options = {
+            "height": "auto",  # Automatically adjusts height based on content
+            "contentHeight": 400,  # Sets the height of the calendar body
+            "aspectRatio": 1.5,  # Adjusts the width-to-height ratio
+            "initialView": "dayGridMonth",  # Ensures the calendar starts in month view
+            "visibleRange": {
+                "start": "2025-03-15",
+                "end": "2025-03-31"
+            }  # Displays only the second half of March 2025
+        }
+
+        events = [
+            {
+                "title": "Arzttermin",
+                "start": date(2025, 3, 23).isoformat(),
+                "end": date(2025, 3, 23).isoformat(),
+            },
+            {
+                "title": "Besuch vom Enkelkind",
+                "start": date(2025, 3, 25).isoformat(),
+                "end": date(2025, 3, 25).isoformat(),
+            },
+            {
+                "title": "Kaffee trinken",
+                "start": date(2025, 3, 30).isoformat(),
+                "end": date(2025, 3, 30).isoformat(),
+            }
         ]
-        st.write("**Bevorstehende Termine:**")
-        for date, desc in appointments:
-            st.write(f"- **{date}**: {desc}")
+        calendar(events=events, custom_css=custom_css, options=calendar_options, key="Termine")
