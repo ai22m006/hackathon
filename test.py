@@ -124,11 +124,27 @@ hide_streamlit_style = """
         transform: scale(1.02);
         box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2) !important;
     }
+    [data-testid="stSidebar"] button {
+        background-color: transparent !important;  /* Transparent background */
+        border: 2px solid #ccc !important;         /* Outline */
+        border-radius: 8px !important;             /* Rounded corners */
+        color: #444 !important;                    /* Text color */
+        margin: 0 auto 10px auto !important;       /* Center horizontally & spacing */
+        display: block !important;
+        width: 80% !important;                     /* Adjust button width */
+        cursor: pointer;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    /* Hover effect */
+    [data-testid="stSidebar"] button:hover {
+        background-color: rgba(0, 0, 0, 0.05) !important;
+        transform: scale(1.02);
+    }
     </style>
     """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 site1 = "Pflege Dashboard"
-site2 = "Pflege Forecast"
+site2 = "Wochen Empfehlungen"
 site3 = "Bewohner Dashboard"
 if "page" not in st.session_state:
     st.session_state.page = site1
@@ -231,7 +247,7 @@ elif selected_page == site2:
 
     st.title(site2)
     st.subheader("Guten Morgen Pfleger*in Alex!")
-    st.write("Wochen Empfehlungen")
+    st.write("Pflege Forecast")
 
     query = "SELECT * FROM openai_report"
     df_report = get_context_data(conn, query)
