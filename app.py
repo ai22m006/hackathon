@@ -178,39 +178,54 @@ if selected_page == site1:
 
         # Top row: two metrics side by side
         top_row1, top_row2 = st.columns(2)
-        query = "SELECT COUNT(PERSON_ID) FROM PERSON WHERE EMPLOYEE = 'Employee A';"
-        df_report = get_context_data(conn, query)
-        count_in_care = df_report.iloc[0][0]
-        query = """SELECT 
-COUNT(PERSON_ID) 
-FROM OUTLIER_DETECTION od
-JOIN PERSON p USING(od.person_id)
-JOIN HISTORICAL_DATA HD  ON HD.PERSON_ID = p.person_id AND HD.MEAL_DATE = od.DATE_
-JOIN APPOINTMENT A ON HD.MEAL_DATE = A.TIME_STAMP AND  P.PERSON_ID = A.PERSON_ID
-JOIN MEALPLAN MP USING(HD.MEALPLAN_ID, HD.MEAL_DATE)
-WHERE 
-DATE_ = DATEADD(DAY, -1, DATE'2025-03-19')
-AND MEALTIME != 'breakfast'
-AND APPEARED = 'No'"""
-        df_report = get_context_data(conn, query)
-        outlier_count = df_report.iloc[0][0]
+
+        if  "count_in_care" not in st.session_state:
+            query = "SELECT COUNT(PERSON_ID) FROM PERSON WHERE EMPLOYEE = 'Employee A';"
+            df_report = get_context_data(conn, query)
+            # safe into session
+            st.session_state.count_in_care = df_report.iloc[0][0]
+
+        count_in_care = st.session_state.count_in_care
+
         with top_row1:
             st.metric("In Pflege heute", count_in_care)
+        
+        if "outlier_count" not in st.session_state:
+            query = """SELECT 
+                        COUNT(PERSON_ID) 
+                        FROM OUTLIER_DETECTION od
+                        JOIN PERSON p USING(od.person_id)
+                        JOIN HISTORICAL_DATA HD  ON HD.PERSON_ID = p.person_id AND HD.MEAL_DATE = od.DATE_
+                        JOIN APPOINTMENT A ON HD.MEAL_DATE = A.TIME_STAMP AND  P.PERSON_ID = A.PERSON_ID
+                        JOIN MEALPLAN MP USING(HD.MEALPLAN_ID, HD.MEAL_DATE)
+                        WHERE 
+                        DATE_ = DATEADD(DAY, -1, DATE'2025-03-19')
+                        AND MEALTIME != 'breakfast'
+                        AND APPEARED = 'No'"""
+            df_report = get_context_data(conn, query)
+            # safe into session
+            st.session_state.outlier_count = df_report.iloc[0][0]
+        
+        outlier_count = st.session_state.outlier_count
+        
         with top_row2:
             st.metric("Daten Ausreißer gefunden", outlier_count)
 
         st.write("")  # Spacer
 
-        query = """SELECT 
-MEAL_DATE,
-APPEARED,
-COUNT(PERSON_ID) AS COUNT
-FROM HISTORICAL_DATA
-WHERE MEAL_DATE = DATEADD(DAY, -1, DATE'2025-03-19')
-GROUP BY APPEARED, MEAL_DATE;"""
-        df_pie_query = get_context_data(conn, query)
+        # save into session chek if it is already there
+        if "df_pie_query" not in st.session_state:
+            query = """SELECT 
+                    MEAL_DATE,
+                    APPEARED,
+                    COUNT(PERSON_ID) AS COUNT
+                    FROM HISTORICAL_DATA
+                    WHERE MEAL_DATE = DATEADD(DAY, -1, DATE'2025-03-19')
+                    GROUP BY APPEARED, MEAL_DATE;"""
+            st.session_state.df_pie_query = get_context_data(conn, query)
 
-
+        df_pie_query = st.session_state.df_pie_query
+        
         # Pie Chart
         df_pie = pd.DataFrame({
             'Status': ['War Anwesend', 'Nicht erschienen'],
@@ -227,9 +242,11 @@ GROUP BY APPEARED, MEAL_DATE;"""
 
     # ---------------------- RIGHT COLUMN ----------------------
     with right_col:
-
-        query = "SELECT * FROM openai_report"
-        df_report = get_context_data(conn, query)
+        if "df_report" not in st.session_state:
+            query = "SELECT * FROM openai_report"
+            st.session_state.df_report = get_context_data(conn, query)
+        
+        df_report = st.session_state.df_report
         if df_report.empty:
             st.write("No reports found.")
         else:
@@ -249,8 +266,11 @@ elif selected_page == site2:
     st.subheader("Guten Morgen Pfleger*in Alex!")
     st.write("Pflege Forecast")
 
-    query = "SELECT * FROM openai_report"
-    df_report = get_context_data(conn, query)
+    if "df_report" not in st.session_state:
+        query = "SELECT * FROM openai_report"
+        st.session_state.df_report = get_context_data(conn, query)
+    
+    df_report = st.session_state.df_report
     if df_report.empty:
         st.write("No reports found.")
     else:
