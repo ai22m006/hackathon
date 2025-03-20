@@ -183,7 +183,7 @@ if selected_page == site1:
             query = "SELECT COUNT(PERSON_ID) FROM PERSON WHERE EMPLOYEE = 'Employee A';"
             df_report = get_context_data(conn, query)
             # safe into session
-            st.session_state.count_in_care = df_report.iloc[0][0]
+            st.session_state.count_in_care = df_report.iloc[0].iloc[0]
 
         count_in_care = st.session_state.count_in_care
 
@@ -204,7 +204,7 @@ if selected_page == site1:
                         AND APPEARED = 'No'"""
             df_report = get_context_data(conn, query)
             # safe into session
-            st.session_state.outlier_count = df_report.iloc[0][0]
+            st.session_state.outlier_count = df_report.iloc[0].iloc[0]
         
         outlier_count = st.session_state.outlier_count
         
