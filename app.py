@@ -12,7 +12,6 @@ from datetime import date
 import streamlit.components.v1 as components
 from streamlit_calendar import calendar
 import warnings
-warnings.filterwarnings("ignore")
 
 # Load environment variables
 load_dotenv()
@@ -301,13 +300,13 @@ elif selected_page == site3:
     # ----- Wetter Card -----
     if "weather" not in st.session_state:
         try:
-            response = requests.get('https://login.meteomatics.com/api/v1/token', auth=(os.environ.get("WEATHER_USERNAME"), os.environ.get('WEATHER_PASSWORD')), verify=False)
+            response = requests.get('https://login.meteomatics.com/api/v1/token', auth=(os.environ.get("WEATHER_USERNAME"), os.environ.get('WEATHER_PASSWORD')))
             response.raise_for_status()
             data = response.json()
             token = data['access_token']
             time = datetime.now()
             time = time.strftime("%Y-%m-%dT%H:%M:%S.000+01:00")
-            response = requests.get("https://api.meteomatics.com/" + time + "/t_2m:C/48.2083537,16.3725042/json?model=mix&access_token=" + token, verify=False)
+            response = requests.get("https://api.meteomatics.com/" + time + "/t_2m:C/48.2083537,16.3725042/json?model=mix&access_token=" + token)
             response.raise_for_status()
             data = response.json()
             temperatur = data['data'][0]['coordinates'][0]['dates'][0]['value']
