@@ -7,6 +7,10 @@ from dotenv import load_dotenv
 import snowflake.connector
 import pandas as pd
 import streamlit.components.v1 as components
+import warnings
+
+# Ignore all warnings
+warnings.filterwarnings("ignore")
 
 # Load environment variables
 load_dotenv()
